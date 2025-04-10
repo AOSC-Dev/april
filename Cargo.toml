@@ -1,0 +1,26 @@
+[package]
+name = "appam"
+description = "AOSC Package Patch Applier Module"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+deb822-lossless = { git = "https://github.com/jelmer/deb822-rs", rev = "ec19e07a137df6f464116a3cb10b7f44f26b11b2" }
+serde_json = "^1"
+serde = { version = "^1", features = ["derive"] }
+toml = "0.8"
+anyhow = "^1"
+tar = "0.4"
+tempfile = "^3"
+logos = "0.15"
+libc = "0.2"
+url = "^2"
+base64 = "0.22"
+ureq = "^3"
+percent-encoding = "^2"
+sha2 = "0.10"
+hex = "0.4"
+argh = "0.1"
+
+[profile.release]
+lto = true

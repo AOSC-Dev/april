@@ -1,0 +1,26 @@
+schema = "0"
+name = "sunloginclient"
+compatible_versions = "*"
+
+[overrides.scripts]
+postinst = """#!/bin/bash
+#kill all runing sunloginclient
+killall sunloginclient > /dev/null 2>&1
+
+#clear log files
+if [ -d '/var/log/sunlogin' ]; then
+  rm -rf /var/log/sunlogin
+fi
+install -dm777 /var/log/sunlogin
+chmod 666 /usr/local/sunlogin/res/skin/*.skin
+chmod 766 /usr/share/applications/sunlogin.desktop
+chmod 644 /usr/local/sunlogin/res/icon/*
+systemctl enable runsunloginclient.service --now
+"""
+conffiles = ["/etc/orayconfig.conf"]
+prerm = """#!/bin/bash
+systemctl disable runsunloginclient.service --now
+"""
+
+[files]
+"/usr/local/sunlogin/scripts/runsunloginclient.service" = { action = "copy", arg = "/etc/systemd/system/runsunloginclient.service" }

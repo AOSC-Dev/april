@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/AOSC-Dev/aosc-os-abbs/blob/stable/topics/tum.schema.json",
+  "title": "AOSC Package Reconstruction Information Listing",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "type": "enum",
+      "enum": ["0"],
+      "description": "The schema version of this information listing. Currently only version 0 is supported"
+    },
+    "name": {
+      "type": "string",
+      "description": "The name of the package to patch"
+    },
+    "compatible_versions": {
+      "type": "string",
+      "description": "The version expression that describes patch compatibility"
+    },
+    "total_conversion": {
+      "type": "boolean",
+      "default": false,
+      "description": "True to mark all package metadata as untrustworthy and re-construct the entire package from this information listing."
+    },
+    "overrides": {
+      "type": "object",
+      "description": "Overrides for the binary package",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The new package name"
+        },
+        "version": {
+          "type": "string",
+          "description": "The package version to use after the patch"
+        },
+        "arch": {
+          "type": "string",
+          "description": "The overridden CPU architecture of the package"
+        },
+        "essential": {
+          "type": "boolean",
+          "description": "True if the package is essential for the system (default: same as the original package, or false if total_conversion is true)"
+        },
+        "installed_size": {
+          "type": "integer",
+          "description": "The size of the installed package in kilobytes"
+        },
+        "section": {
+          "type": "string",
+          "description": "The new package section"
+        },
+        "description": {
+          "type": "string",
+          "description": "The new package description"
+        },
+        "depends": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The new package required dependencies"
+        },
+        "recommends": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The new package recommended dependencies"
+        },
+        "suggests": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The new package suggested dependencies"
+        },
+        "pre_depends": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The new package pre-dependencies"
+        },
+        "breaks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The new package dependency breaks"
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The new package conflicting dependencies"
+        },
+        "replaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The new package replaced dependencies"
+        },
+        "provides": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The new package provided dependencies"
+        },
+        "scripts": {
+          "type": "object",
+          "description": "The new package scripts. Leaving script content an empty string to disable the script (if the original package has this script)",
+          "properties": {
+            "prerm": {
+              "type": "string",
+              "description": "The new pre-removal script"
+            },
+            "postrm": {
+              "type": "string",
+              "description": "The new post-removal script"
+            },
+            "preinst": {
+              "type": "string",
+              "description": "The new pre-installation script"
+            },
+            "postinst": {
+              "type": "string",
+              "description": "The new post-installation script"
+            },
+            "triggers": {
+              "type": "string",
+              "description": "The new triggers script"
+            }
+          }
+        },
+        "conffiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The new list of configuration files. An empty array means untracking all configuration files."
+        },
+        "controls": {
+          "type": "object",
+          "description": "Extra control field operations (if more control field operations are needed, please define them here)",
+          "properties": {
+            "patternProperties": {
+              "^[a-z]+_[A-Z]+": {
+                "type": "string",
+                "description" : "New field value"
+              }
+            }
+          }
+        }
+      }
+    },
+    "files": {
+      "type": "object",
+      "description": "Extra file operations to perform on the files inside specified binary package",
+      "properties": {
+        "patternProperties": {
+          "^[a-z]+_[A-Z]+": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "enum",
+                "enum": [
+                  "remove",
+                  "move",
+                  "copy",
+                  "link",
+                  "patch",
+                  "binary-patch",
+                  "divert",
+                  "track",
+                  "overwrite",
+                  "add",
+                  "chmod",
+                  "mkdir"
+                ],
+                "description": "The action to perform on the file. Available actions are: remove, move, copy, link, patch, binary-patch, divert, track, overwrite, add, chmod and mkdir."
+              },
+              "arg": {
+                "type": "string",
+                "description": "Data or argument used by the file operation. Should not exist if the action is 'remove', 'track' or 'mkdir'."
+              },
+              "phase": {
+                "type": "string",
+                "enum": ["unpack", "postinst"],
+                "default": "unpack",
+                "description": "The phase during which the file operation should be performed. Available phases are: unpack (after preinst but before postinst) and postinst (after running postinst script)."
+              }
+            },
+            "required": ["action"]
+          }
+        }
+      }
+    }
+  }
+}
