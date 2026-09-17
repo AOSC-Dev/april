@@ -124,8 +124,8 @@ impl<'source> VersionToken<'source> {
     }
 }
 
-const ZERO_STRING: &'static str = "0";
-const VERSION_PLACEHOLDER: &'static str = "$VER";
+const ZERO_STRING: &str = "0";
+const VERSION_PLACEHOLDER: &str = "$VER";
 const VERSION_PLACEHOLDER_TOKEN: VersionToken = VersionToken::VersionNumber(VERSION_PLACEHOLDER);
 
 #[derive(PartialEq)]
@@ -136,7 +136,7 @@ struct DebVersion<'a> {
 }
 
 impl<'a> DebVersion<'a> {
-    fn parse(input: &str) -> Option<DebVersion> {
+    fn parse(input: &str) -> Option<DebVersion<'_>> {
         let input_bytes = input.as_bytes();
         let mut first_colon = 0usize;
         let mut last_dash = input_bytes.len();
@@ -268,7 +268,7 @@ impl PartialOrd for DebVersion<'_> {
     }
 }
 
-fn parse_version_expr(input: &str) -> Result<Vec<VersionToken>> {
+fn parse_version_expr(input: &str) -> Result<Vec<VersionToken<'_>>> {
     let mut lexer = VersionToken::lexer(input);
     let mut stack: Vec<VersionToken> = Vec::with_capacity(8);
     let mut operators: Vec<VersionToken> = Vec::with_capacity(8);
@@ -294,15 +294,14 @@ fn parse_version_expr(input: &str) -> Result<Vec<VersionToken>> {
             | VersionToken::Lt
             | VersionToken::Or
             | VersionToken::And => {
-                if let Some(last_op) = operators.last() {
-                    if last_op.precedence() >= token.precedence() {
+                if let Some(last_op) = operators.last()
+                    && last_op.precedence() >= token.precedence() {
                         let last = operators.pop().unwrap();
                         stack.push(last);
                         operators.push(token);
                         prev_is_op = token.is_op();
                         continue;
                     }
-                }
                 operators.push(token);
             }
             VersionToken::LParen => operators.push(token),
@@ -348,8 +347,8 @@ fn parse_version_expr(input: &str) -> Result<Vec<VersionToken>> {
 }
 
 pub fn check_version_compatibility(
-    required_version_expr: &str,
-    version_to_check: &str,
+    _required_version_expr: &str,
+    _version_to_check: &str,
 ) -> Result<bool> {
     todo!()
 }

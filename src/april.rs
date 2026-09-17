@@ -1,7 +1,6 @@
 //! This module contains the parser for APRIL (AOSC Package Reconstruction Information Listing)
 
 use anyhow::{Result, bail};
-use deb822_lossless::{Deb822, Paragraph};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, collections::HashMap};
 
@@ -139,18 +138,17 @@ pub fn validate_april_data(data: &AprilPackage) -> Result<()> {
     }
 
     // for total_conversion data, all mandatory fields should be present
-    if data.total_conversion {
-        if data.overrides.name.is_none()
+    if data.total_conversion
+        && (data.overrides.name.is_none()
             || data.overrides.version.is_none()
             || data.overrides.arch.is_none()
             || data.overrides.installed_size.is_none()
             || data.overrides.section.is_none()
             || data.overrides.description.is_none()
-            || data.overrides.depends.is_none()
+            || data.overrides.depends.is_none())
         {
             bail!("Missing mandatory fields in total_conversion package");
         }
-    }
 
     // TODO: validate other fields as well
 
@@ -348,14 +346,11 @@ pub fn plan_actions_from_april_data(data: &AprilPackage) -> Result<Vec<AprilActi
     // If there are files to be patched after the extraction phase (unpack phase), we need to patch them here
     if let Some(files) = &data.files {
         for (path, operation) in files {
-            match operation.phase {
-                AprilFileOperationPhase::Unpack => {
-                    actions.push(AprilAction::PatchFile {
-                        path: path.clone(),
-                        action: operation.operation.clone(),
-                    });
-                }
-                _ => {}
+            if let AprilFileOperationPhase::Unpack = operation.phase {
+                actions.push(AprilAction::PatchFile {
+                    path: path.clone(),
+                    action: operation.operation.clone(),
+                });
             }
         }
     }
@@ -400,14 +395,11 @@ pub fn plan_actions_from_april_data(data: &AprilPackage) -> Result<Vec<AprilActi
     // If there are files to be patched after the configuration phase (postinst phase), we need to patch them here
     if let Some(files) = &data.files {
         for (path, operation) in files {
-            match operation.phase {
-                AprilFileOperationPhase::Postinst => {
-                    actions.push(AprilAction::PatchFile {
-                        path: path.clone(),
-                        action: operation.operation.clone(),
-                    });
-                }
-                _ => {}
+            if let AprilFileOperationPhase::Postinst = operation.phase {
+                actions.push(AprilAction::PatchFile {
+                    path: path.clone(),
+                    action: operation.operation.clone(),
+                });
             }
         }
     }

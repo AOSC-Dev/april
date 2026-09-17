@@ -52,7 +52,7 @@ fn apply_field_patch(action: &AprilAction, paragraph: &mut Paragraph) {
                     if value.is_empty() {
                         paragraph.remove(field);
                     } else {
-                        paragraph.set(field, &value);
+                        paragraph.set(field, value);
                     }
                 }
             }
@@ -61,7 +61,7 @@ fn apply_field_patch(action: &AprilAction, paragraph: &mut Paragraph) {
     }
 }
 
-fn resolve_path<'a, P: AsRef<Path>>(root: P, path: &'a str) -> Result<PathBuf> {
+fn resolve_path<P: AsRef<Path>>(root: P, path: &str) -> Result<PathBuf> {
     let root_path = root.as_ref();
     let file_path = root_path.join(path).canonicalize()?;
     if !file_path.starts_with(root_path) {
@@ -87,7 +87,7 @@ fn resolve_resource_uri(uri: &str) -> Result<AprilResourceType> {
             let options = uri_parts[1];
             for option in options.split(';') {
                 if option.starts_with("sha256=") {
-                    sha256sum = Some(option.split('=').last().unwrap());
+                    sha256sum = Some(option.split('=').next_back().unwrap());
                 }
             }
         }
@@ -130,7 +130,7 @@ fn resolve_resource_uri(uri: &str) -> Result<AprilResourceType> {
             Ok(AprilResourceType::Inline { content: payload })
         }
         _ => {
-            return Err(anyhow!("Unsupported scheme in resource URI: {}", url));
+            Err(anyhow!("Unsupported scheme in resource URI: {}", url))
         }
     }
 }
@@ -148,19 +148,19 @@ fn fetch_resource_uri(uri: &str) -> Result<Vec<u8>> {
                 if hex::encode(calculated_sha256) == sha256 {
                     Ok(response_content)
                 } else {
-                    return Err(anyhow!(
+                    Err(anyhow!(
                         "SHA256 sum mismatch for resource: {}, expected {}, got {}",
                         url,
                         sha256,
                         hex::encode(calculated_sha256)
-                    ));
+                    ))
                 }
             } else {
-                return Err(anyhow!(
+                Err(anyhow!(
                     "Failed to fetch resource: {} (HTTP {})",
                     url,
                     response.status()
-                ));
+                ))
             }
         }
         AprilResourceType::Inline { content } => {
@@ -197,7 +197,7 @@ fn apply_file_operation<P: AsRef<Path>>(
         AprilFileOperationType::Patch(url) => {
             let content = fetch_resource_uri(url)?;
             let mut command = Command::new("patch")
-                .args(&["-Nt", "-r-"])
+                .args(["-Nt", "-r-"])
                 .arg(&file_path)
                 .stdin(std::process::Stdio::piped())
                 .spawn()?;
@@ -213,10 +213,10 @@ fn apply_file_operation<P: AsRef<Path>>(
         AprilFileOperationType::BinaryPatch(url) => {
             let content = fetch_resource_uri(url)?;
             let mut command = Command::new("xdelta3")
-                .args(&["-d", "-f", "-s"])
+                .args(["-d", "-f", "-s"])
                 .arg(&file_path)
                 .arg("/dev/stdin")
-                .arg(&file_path.clone())
+                .arg(file_path.clone())
                 .stdin(std::process::Stdio::piped())
                 .spawn()?;
             command.stdin.take().unwrap().write_all(&content)?;
@@ -228,7 +228,7 @@ fn apply_file_operation<P: AsRef<Path>>(
                 Ok(())
             }
         }
-        AprilFileOperationType::Divert(dst) => todo!(),
+        AprilFileOperationType::Divert(_dst) => todo!(),
         AprilFileOperationType::Track => todo!(),
         AprilFileOperationType::Overwrite(url) => {
             let content = fetch_resource_uri(url)?;
@@ -334,7 +334,7 @@ pub fn apply_actions_for_reconstruct<P: AsRef<Path>>(
             | AprilAction::InstallPackage => (),
             AprilAction::PatchField { .. } => {
                 for mut paragraph in &mut control_data.paragraphs() {
-                    apply_field_patch(&i, &mut paragraph);
+                    apply_field_patch(i, &mut paragraph);
                 }
             }
             AprilAction::DropControlData => control_data = Deb822::new(),
